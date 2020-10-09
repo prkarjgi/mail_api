@@ -1,13 +1,23 @@
+from datetime import timedelta
+
 from django.db import models
 
 
-class Schedule(models.Model):
-    pass
-
-
 class Recipient(models.Model):
-    pass
+    email_address = models.EmailField(
+        default="dummy@placeholder.com", unique=True
+    )
+    name = models.TextField(default='')
+
+    class Meta:
+        ordering = ('id',)
 
 
-class SchedRecip(models.Model):
-    pass
+class Schedule(models.Model):
+    recipients = models.ManyToManyField(Recipient)
+    content = models.TextField(default='')
+    frequency = models.DurationField(default=timedelta())
+
+    class Meta:
+        unique_together = ('content', 'frequency')
+        ordering = ('id',)

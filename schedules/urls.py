@@ -17,5 +17,5 @@ from django.urls import path
 from schedules import views
 
 urlpatterns = [
-    path(),
+    path('add', views.add_schedule, name='new_schedule')
 ]

@@ -1,0 +1,8 @@
+venv/
+
+.vscode/
+
+geckodriver.log
+
+
+db.sqlite3

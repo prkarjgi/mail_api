@@ -50,14 +50,16 @@ class ScheduleModelTest(TestCase):
         s1 = Schedule()
         s1.start_date = date.today()
         s1.end_date = s1.start_date - timedelta(days=5)
+        # should raise error
         with self.assertRaises(ValidationError):
-            s1.save()
+            s1.full_clean()
 
     def test_start_date_cannot_be_before_now(self):
         s1 = Schedule()
         s1.start_date = date.today() - timedelta(days=5)
+        # should raise error
         with self.assertRaises(ValidationError):
-            s1.save()
+            s1.full_clean()
 
 
 class RecipientModelTest(TestCase):

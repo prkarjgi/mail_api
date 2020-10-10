@@ -11,10 +11,6 @@ END_DATE_NOT_ADDED_ERROR = "end_date cannot be empty"
 START_DATE_CANNOT_BE_BEFORE_TODAY_ERROR = "start_date cannot be in the past"
 
 
-def delay():
-    return timezone.now() + timedelta(seconds=10)
-
-
 class Recipient(models.Model):
     email_address = models.EmailField(
         default="dummy@placeholder.com", unique=True

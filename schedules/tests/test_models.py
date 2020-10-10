@@ -1,21 +1,22 @@
-from datetime import timedelta
+from datetime import timedelta, date
 
 from django.test import TestCase
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from schedules.models import Schedule, Recipient
 
 
 class ScheduleModelTest(TestCase):
     def test_add_to_schedule_model(self):
-        r1 = Recipient(
-            email_address="test@test.com",
-            name="test1"
+        r1 = Recipient(email_address="test@test.com", name="test1")
+        r2 = Recipient(email_address="test2@test.com", name="test2")
+
+        r3 = Recipient.objects.create(
+            email_address="test3@test.com",
+            name="test3"
         )
-        r2 = Recipient(
-            email_address="test2@test.com",
-            name="test2"
-        )
+
         r1.save()
         r2.save()
 
@@ -28,6 +29,8 @@ class ScheduleModelTest(TestCase):
         s2.recipients.add(r1, r2)
 
         self.assertEqual([r1, r2], list(s1.recipients.all()))
+        self.assertEqual([r1, r2], list(s2.recipients.all()))
+        self.assertNotEqual([r1, r3], list(s1.recipients.all()))
 
     def test_default_schedule_is_valid(self):
         s1 = Schedule()
@@ -35,10 +38,26 @@ class ScheduleModelTest(TestCase):
         self.assertEqual(s1.frequency, timedelta())
 
     def test_duplicate_schedule_is_invalid(self):
-        s1 = Schedule.objects.create()
+        start_date = date.today()
+        end_date = start_date + timedelta(days=1)
+        s1 = Schedule.objects.create(start_date=start_date, end_date=end_date)
+
         with self.assertRaises(ValidationError):
-            s2 = Schedule()
+            s2 = Schedule(start_date=start_date, end_date=end_date)
             s2.full_clean()
+
+    def test_stop_date_cannot_be_before_start_date(self):
+        s1 = Schedule()
+        s1.start_date = date.today()
+        s1.end_date = s1.start_date - timedelta(days=5)
+        with self.assertRaises(ValidationError):
+            s1.save()
+
+    def test_start_date_cannot_be_before_now(self):
+        s1 = Schedule()
+        s1.start_date = date.today() - timedelta(days=5)
+        with self.assertRaises(ValidationError):
+            s1.save()
 
 
 class RecipientModelTest(TestCase):

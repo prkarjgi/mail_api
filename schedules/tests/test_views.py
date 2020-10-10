@@ -8,8 +8,8 @@ from schedules.views import add_schedule
 class ScheduleAddTest(TestCase):
     @skip
     def test_add_one_schedule(self):
-        self.client.get("/schedule/add")
+        self.client.get("/schedules/add")
 
     def test_add_schedule_resolves_to_add_view(self):
-        add = resolve("/schedule/add")
+        add = resolve("/schedules/add")
         self.assertEqual(add.func, add_schedule)

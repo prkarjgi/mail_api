@@ -32,10 +32,15 @@ class ScheduleModelTest(TestCase):
         self.assertEqual([r1, r2], list(s2.recipients.all()))
         self.assertNotEqual([r1, r3], list(s1.recipients.all()))
 
-    def test_default_schedule_is_valid(self):
+    def test_default_schedule_values_are_assigned(self):
         s1 = Schedule()
         self.assertEqual(s1.content, '')
         self.assertEqual(s1.frequency, timedelta())
+
+    def test_default_schedule_is_valid(self):
+        s1 = Schedule()
+        s1.full_clean()
+        s1.save()
 
     def test_duplicate_schedule_is_invalid(self):
         start_date = date.today()
@@ -60,6 +65,12 @@ class ScheduleModelTest(TestCase):
         # should raise error
         with self.assertRaises(ValidationError):
             s1.full_clean()
+
+    def test_save_method_performs_validation(self):
+        s1 = Schedule()
+        s1.start_date = date.today() - timedelta(days=2)
+        with self.assertRaises(ValidationError):
+            s1.save()
 
 
 class RecipientModelTest(TestCase):

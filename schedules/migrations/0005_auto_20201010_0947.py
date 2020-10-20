@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='schedule',
             name='end_date',
-            field=models.DateTimeField(default=schedules.models.delay),
+            field=models.DateTimeField(default=django.utils.timezone.now),
         ),
         migrations.AlterField(
             model_name='schedule',

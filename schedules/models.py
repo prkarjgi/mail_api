@@ -24,6 +24,9 @@ class Recipient(models.Model):
     class Meta:
         ordering = ('id',)
 
+    def __str__(self):
+        return f"{self.name}: {self.email_address}"
+
 
 class Schedule(models.Model):
     recipients = models.ManyToManyField(Recipient)

@@ -10,7 +10,7 @@ class RecipientSerializer(serializers.ModelSerializer):
 
 
 class ScheduleSerializer(serializers.ModelSerializer):
-    recipients = RecipientSerializer(many=True, read_only=True)
+    recipients = RecipientSerializer(many=True)
 
     class Meta:
         model = Schedule

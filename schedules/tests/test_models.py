@@ -72,6 +72,27 @@ class ScheduleModelTest(TestCase):
         with self.assertRaises(ValidationError):
             s1.save()
 
+    def test_delete_schedule_cascades_to_map_table(self):
+        s1 = Schedule(content="placeholder 1")
+        s2 = Schedule(content="placeholder 2")
+
+        r1 = Recipient.objects.create(email_address="test@gmail.com")
+        r2 = Recipient.objects.create(email_address="test2@test.com")
+        r3 = Recipient.objects.create(email_address="test3@gmil.com")
+
+        s1.save()
+        s2.save()
+
+        s1.recipients.add(r1, r2)
+        s2.recipients.add(r2, r3)
+
+        self.assertEqual(r2.schedule_set.count(), 2)
+        s1.delete()
+        self.assertEqual(r2.schedule_set.count(), 1)
+        s2.delete()
+        self.assertEqual(r2.schedule_set.count(), 0)
+        self.assertEqual(Recipient.objects.count(), 3)
+
 
 class RecipientModelTest(TestCase):
     def test_default_recipient_values(self):
@@ -88,3 +109,8 @@ class RecipientModelTest(TestCase):
         with self.assertRaises(ValidationError):
             r2 = Recipient()
             r2.full_clean()
+
+    def test_email_address_is_validated(self):
+        r1 = Recipient(email_address="test")
+        with self.assertRaises(ValidationError):
+            r1.full_clean()

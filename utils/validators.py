@@ -44,7 +44,7 @@ def recipients_less_than_500(recipients):
 def recipients_not_contains_duplicates(recipients):
     recipients_set = set()
     for recipient in recipients:
-        if recipient not in recipients_set:
-            recipients_set.add(recipient)
+        if recipient['email_address'] not in recipients_set:
+            recipients_set.add(recipient['email_address'])
         else:
             raise ValidationError(RECIPIENTS_CONTAIN_DUPLICATES_ERROR)

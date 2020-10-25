@@ -2,6 +2,7 @@ from datetime import timedelta, date
 
 from django.test import TestCase
 from django.core.exceptions import ValidationError
+# from rest_framework.serializers import ValidationError
 from django.utils import timezone
 
 from schedules.models import Schedule, Recipient

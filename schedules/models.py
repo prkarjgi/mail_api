@@ -24,11 +24,15 @@ class Recipient(models.Model):
 
 
 class Schedule(models.Model):
+    description = models.TextField(default='', blank=True)
     recipients = models.ManyToManyField(Recipient)
     content = models.TextField(default='', blank=True)
     frequency = models.DurationField(default=timedelta())
     start_date = models.DateField(default=date.today)
     end_date = models.DateField(default=date.today)
+    # status = models.CharField(
+
+    # )
 
     is_cleaned = False
 
@@ -44,5 +48,7 @@ class Schedule(models.Model):
         super().save(*args, **kwargs)
 
     class Meta:
-        unique_together = ('content', 'frequency', 'start_date', 'end_date')
+        unique_together = (
+            'description', 'content', 'frequency', 'start_date', 'end_date'
+        )
         ordering = ('id',)

@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from rest_framework.validators import UniqueTogetherValidator
+from django.core.validators import EmailValidator
 
 from schedules.models import Schedule, Recipient
 from utils import validators
@@ -7,7 +8,9 @@ from utils import validators
 
 class RecipientSerializer(serializers.Serializer):
     name = serializers.CharField(required=True)
-    email_address = serializers.EmailField(required=True)
+    email_address = serializers.EmailField(
+        required=True, validators=[EmailValidator]
+    )
 
     def create(self, validated_data):
         return Recipient.objects.create(**validated_data)
@@ -19,6 +22,7 @@ class RecipientSerializer(serializers.Serializer):
 
 
 class ScheduleSerializer(serializers.Serializer):
+    description = serializers.CharField()
     recipients = RecipientSerializer(many=True)
     content = serializers.CharField(required=True, max_length=1000)
     frequency = serializers.DurationField(required=True)
@@ -29,7 +33,10 @@ class ScheduleSerializer(serializers.Serializer):
         validators = [
             UniqueTogetherValidator(
                 queryset=Schedule.objects.all(),
-                fields=['content', 'frequency', 'start_date', 'end_date'],
+                fields=[
+                    'description', 'content', 'frequency',
+                    'start_date', 'end_date'
+                ],
                 message=validators.FIELDS_NOT_UNIQUE_TOGETHER_ERROR
             )
         ]
@@ -45,12 +52,11 @@ class ScheduleSerializer(serializers.Serializer):
         validators.recipients_less_than_500(data['recipients'])
         validators.recipients_not_contains_duplicates(data['recipients'])
 
-        # validate = validators.RecipientDuplicateValidator()
-        # validate(data['recipients'])
         return data
 
     def create(self, validated_data):
         schedule = Schedule.objects.create(
+            description=validated_data['description'],
             content=validated_data['content'],
             frequency=validated_data['frequency'],
             start_date=validated_data['start_date'],
@@ -60,14 +66,14 @@ class ScheduleSerializer(serializers.Serializer):
             if not Recipient.objects.filter(
                 email_address=recipient['email_address']
             ).exists():
-                print('not in db')
+                # print('not in db')
                 recip = Recipient.objects.create(
                     name=recipient['name'],
                     email_address=recipient['email_address']
                 )
                 schedule.recipients.add(recip)
             else:
-                print('already found')
+                # print('already found')
                 r = Recipient.objects.get(
                     email_address=recipient['email_address']
                 )
@@ -75,4 +81,37 @@ class ScheduleSerializer(serializers.Serializer):
         return schedule
 
     def update(self, instance, validated_data):
+        instance.description = validated_data.get(
+            'description', instance.description
+        )
+        instance.content = validated_data.get(
+            'content', instance.content
+        )
+        instance.frequency = validated_data.get(
+            'validated_data', instance.frequency
+        )
+        instance.start_date = validated_data.get(
+            'start_date', instance.start_date
+        )
+        instance.end_date = validated_data.get(
+            'end_date', instance.end_date
+        )
+        recipients = validated_data.get('recipients')
+        if recipients is not None:
+            instance.recipients.clear()
+            for recipient in recipients:
+                if Recipient.objects.filter(
+                    email_address=recipient['email_address']
+                ).exists():
+                    recip = Recipient.objects.get(
+                        email_address=recipient['email_address']
+                    )
+                    instance.recipients.add(recip)
+                else:
+                    recip = Recipient.objects.create(
+                        name=recipient['name'],
+                        email_address=recipient['email_address']
+                    )
+                    instance.recipients.add(recip)
+        instance.save()
         return instance

@@ -4,6 +4,7 @@ from django.core.validators import EmailValidator
 
 from schedules.models import Schedule, Recipient
 from utils import validators
+from utils.serializers import create_or_update_recipients
 
 
 class RecipientSerializer(serializers.Serializer):
@@ -62,22 +63,8 @@ class ScheduleSerializer(serializers.Serializer):
             start_date=validated_data['start_date'],
             end_date=validated_data['end_date']
         )
-        for recipient in validated_data['recipients']:
-            if not Recipient.objects.filter(
-                email_address=recipient['email_address']
-            ).exists():
-                # print('not in db')
-                recip = Recipient.objects.create(
-                    name=recipient['name'],
-                    email_address=recipient['email_address']
-                )
-                schedule.recipients.add(recip)
-            else:
-                # print('already found')
-                r = Recipient.objects.get(
-                    email_address=recipient['email_address']
-                )
-                schedule.recipients.add(r)
+        recipients = validated_data['recipients']
+        create_or_update_recipients(schedule, recipients, False)
         return schedule
 
     def update(self, instance, validated_data):
@@ -98,20 +85,6 @@ class ScheduleSerializer(serializers.Serializer):
         )
         recipients = validated_data.get('recipients')
         if recipients is not None:
-            instance.recipients.clear()
-            for recipient in recipients:
-                if Recipient.objects.filter(
-                    email_address=recipient['email_address']
-                ).exists():
-                    recip = Recipient.objects.get(
-                        email_address=recipient['email_address']
-                    )
-                    instance.recipients.add(recip)
-                else:
-                    recip = Recipient.objects.create(
-                        name=recipient['name'],
-                        email_address=recipient['email_address']
-                    )
-                    instance.recipients.add(recip)
+            create_or_update_recipients(instance, recipients, True)
         instance.save()
         return instance

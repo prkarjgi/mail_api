@@ -30,14 +30,3 @@ def create_or_update_recipients(
 
     Recipient.objects.bulk_create(to_be_created)
     schedule.recipients.add(*new_recipients)
-
-
-def update_recipients_in_schedule(schedule: Schedule, recipients: List):
-    """
-    Get existing email addresses associated with the provided schedule.
-    Check which addresses should be deleted from the relationship table
-    and bulk delete them
-
-
-    """
-    pass

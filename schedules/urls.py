@@ -17,5 +17,6 @@ from django.urls import path
 from schedules import views
 
 urlpatterns = [
-    path('add', views.add_schedule, name='new_schedule')
+    path('', views.schedule_list),
+    path('<int:pk>/', views.schedule_one)
 ]

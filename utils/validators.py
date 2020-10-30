@@ -14,6 +14,7 @@ FIELDS_NOT_UNIQUE_TOGETHER_ERROR = "Schedule fields should be unique together"
 # Errors for Recipient fields
 RECIPIENTS_GREATER_THAN_500_ERROR = "Recipients should be less than 500"
 RECIPIENTS_CONTAIN_DUPLICATES_ERROR = "Recipients shouldn't contain duplicates"
+INVALID_EMAIL_ADDRESS_ERROR = "Enter a valid email address."
 
 
 def start_date_after_today(start_date):

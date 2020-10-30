@@ -16,11 +16,6 @@ class RecipientSerializer(serializers.Serializer):
     def create(self, validated_data):
         return Recipient.objects.create(**validated_data)
 
-    # class Meta:
-    #     # validators = []
-    #     model = Recipient
-    #     fields = ['name', 'email_address']
-
 
 class ScheduleSerializer(serializers.Serializer):
     description = serializers.CharField()
@@ -84,7 +79,7 @@ class ScheduleSerializer(serializers.Serializer):
             'end_date', instance.end_date
         )
         recipients = validated_data.get('recipients')
-        if recipients is not None:
+        if recipients:
             create_or_update_recipients(instance, recipients, True)
         instance.save()
         return instance

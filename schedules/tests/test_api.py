@@ -6,12 +6,19 @@ from rest_framework.serializers import ValidationError
 
 from schedules.serializers import ScheduleSerializer, RecipientSerializer
 from schedules.models import Schedule, Recipient
-from utils.testing import create_schedule_input_data
+from utils.testing import create_schedule_input_data, serialize_input_data
 from utils.validators import RECIPIENTS_CONTAIN_DUPLICATES_ERROR,\
-    RECIPIENTS_GREATER_THAN_500_ERROR, FIELDS_NOT_UNIQUE_TOGETHER_ERROR
+    RECIPIENTS_GREATER_THAN_500_ERROR, FIELDS_NOT_UNIQUE_TOGETHER_ERROR,\
+    INVALID_EMAIL_ADDRESS_ERROR, END_DATE_NOT_ADDED_ERROR
 
 
 class ScheduleSerializerTest(TestCase):
+    def setUp(self):
+        self.recipients = [
+            {'name': 'test', 'email_address': 'test@gmail.com'},
+            {'name': 'test2', 'email_address': 'test2@gmail.com'}
+        ]
+
     def test_serializer_can_deserialize_json(self):
         recipients = [
             {'name': 'test', 'email_address': 'test@gmail.com'},
@@ -20,10 +27,10 @@ class ScheduleSerializerTest(TestCase):
         data = create_schedule_input_data(
             recipients=recipients
         )
-
         serializer = ScheduleSerializer(data=data)
         self.assertEqual(serializer.is_valid(), True)
         schedule = serializer.save()
+        self.assertIsInstance(schedule, Schedule)
         self.assertEqual(Schedule.objects.count(), 1)
         self.assertEqual(Recipient.objects.count(), 2)
 
@@ -33,18 +40,14 @@ class ScheduleSerializerTest(TestCase):
             {'name': 'test2', 'email_address': 'test2@gmail.com'}
         ]
         num_schedules = 10
-        for iter in range(num_schedules):
-            data = create_schedule_input_data(
-                content=f"{iter}", recipients=recipients
-            )
-            serializer = ScheduleSerializer(data=data)
-            if serializer.is_valid():
-                serializer.save()
-
+        serialize_input_data(
+            recipients=recipients, num_schedules=num_schedules
+        )
         schedules = Schedule.objects.all()
         serialized_schedules = ScheduleSerializer(
             instance=schedules, many=True
         )
+
         self.assertEqual(len(schedules), num_schedules)
         self.assertEqual(len(serialized_schedules.data), num_schedules)
 
@@ -53,9 +56,8 @@ class ScheduleSerializerTest(TestCase):
             {'name': 'test', 'email_address': 'test@gmail.com'},
             {'name': 'test', 'email_address': 'test@gmail.com'}
         ]
-        data = create_schedule_input_data(
-            recipients=recipients
-        )
+
+        data = create_schedule_input_data(recipients=recipients)
 
         serializer = ScheduleSerializer(data=data)
         serializer.is_valid()
@@ -69,9 +71,8 @@ class ScheduleSerializerTest(TestCase):
     def test_recipients_more_than_500_raises_validation_error(self):
         data = {}
         recipients = [
-            {
-                'name': 'test', 'email_address': f'test{idx}@test.com'
-            } for idx in range(501)
+            {'name': 'test', 'email_address': f'test{idx}@test.com'}
+            for idx in range(501)
         ]
         data = create_schedule_input_data(
             recipients=recipients
@@ -83,11 +84,27 @@ class ScheduleSerializerTest(TestCase):
             serializer.errors['non_field_errors'][0],
             RECIPIENTS_GREATER_THAN_500_ERROR
         )
+
         with self.assertRaises(ValidationError):
             serializer.is_valid(raise_exception=True)
 
     def test_invalid_email_addresses_raise_validation_error(self):
-        self.fail("Write test case for valid email addresses")
+        recipients = [
+            {'name': 'test', 'email_address': 'test'},
+            {'name': 'test', 'email_address': 'test@gmail.com'}
+        ]
+        data = create_schedule_input_data(recipients=recipients)
+        schedule_serializer = ScheduleSerializer(data=data)
+
+        self.assertEqual(schedule_serializer.is_valid(), False)
+        self.assertEqual(
+            schedule_serializer.errors['recipients'][0]['email_address'][0],
+            INVALID_EMAIL_ADDRESS_ERROR
+        )
+        self.assertEqual(Schedule.objects.count(), 0)
+        self.assertEqual(Recipient.objects.count(), 0)
+        with self.assertRaises(ValidationError):
+            schedule_serializer.is_valid(raise_exception=True)
 
     def test_recipient_in_db_not_raises_validation_error(self):
         recipients = [
@@ -127,15 +144,11 @@ class ScheduleSerializerTest(TestCase):
         with self.assertRaises(ValidationError):
             serializer_2.is_valid(raise_exception=True)
 
-    def test_update_method_on_schedule_in_db(self):
-        # self.fail("Write test case for updating schedule stored in the db")
+    def test_update_schedule_recipients(self):
         recipients = [
             {'name': 'test', 'email_address': 'test@gmail.com'}
         ]
-        data = create_schedule_input_data(recipients=recipients)
-        serializer = ScheduleSerializer(data=data)
-        if serializer.is_valid():
-            serializer.save()
+        serialize_input_data(recipients=self.recipients)
         self.assertEqual(Schedule.objects.count(), 1)
 
         recipients = [
@@ -153,6 +166,21 @@ class ScheduleSerializerTest(TestCase):
             updated_recipients[0].email_address,
             'test1@gmail.com'
         )
+
+    def test_update_schedule_content(self):
+        self.fail()
+
+    def test_update_schedule_frequency(self):
+        self.fail()
+
+    def test_update_schedule_end_date_before_start_raises_error(self):
+        serialize_input_data(recipients=self.recipients)
+        schedule = Schedule.objects.first()
+        new_data = create_schedule_input_data()
+        new_data['start_date'] = new_data['end_date'] + timedelta(days=1)
+        serializer = ScheduleSerializer(instance=schedule, data=new_data)
+        with self.assertRaises(ValidationError):
+            serializer.is_valid(raise_exception=True)
 
 
 class RecipientSerializerTest(TestCase):

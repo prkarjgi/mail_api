@@ -9,7 +9,8 @@ from schedules.models import Schedule, Recipient
 from utils.testing import create_schedule_input_data, serialize_input_data
 from utils.validators import RECIPIENTS_CONTAIN_DUPLICATES_ERROR,\
     RECIPIENTS_GREATER_THAN_500_ERROR, FIELDS_NOT_UNIQUE_TOGETHER_ERROR,\
-    INVALID_EMAIL_ADDRESS_ERROR, END_DATE_NOT_ADDED_ERROR
+    INVALID_EMAIL_ADDRESS_ERROR, END_DATE_NOT_ADDED_ERROR,\
+    FREQUENCY_GREATER_THAN_END_DATE_ERROR
 
 
 class ScheduleSerializerTest(TestCase):
@@ -145,9 +146,6 @@ class ScheduleSerializerTest(TestCase):
             serializer_2.is_valid(raise_exception=True)
 
     def test_update_schedule_recipients(self):
-        recipients = [
-            {'name': 'test', 'email_address': 'test@gmail.com'}
-        ]
         serialize_input_data(recipients=self.recipients)
         self.assertEqual(Schedule.objects.count(), 1)
 
@@ -157,21 +155,85 @@ class ScheduleSerializerTest(TestCase):
         data = create_schedule_input_data(recipients=recipients)
         schedule = Schedule.objects.first()
         updated_serializer = ScheduleSerializer(instance=schedule, data=data)
-        if updated_serializer.is_valid():
-            updated_serializer.save()
-        updated_schedule = Schedule.objects.first()
-        updated_recipients = updated_schedule.recipients.all()
+        self.assertEqual(updated_serializer.is_valid(), True)
+        updated_serializer.save()
+        updated_recipients = schedule.recipients.all()
 
         self.assertEqual(
             updated_recipients[0].email_address,
-            'test1@gmail.com'
+            updated_serializer.data['recipients'][0]['email_address']
+        )
+        self.assertEqual(
+            updated_recipients[0].email_address, 'test1@gmail.com'
         )
 
+    def test_update_schedule_subject(self):
+        serialize_input_data(recipients=self.recipients)
+        self.assertEqual(Schedule.objects.count(), 1)
+
+        data = create_schedule_input_data(subject="new subject")
+        schedule = Schedule.objects.first()
+        updated_serializer = ScheduleSerializer(instance=schedule, data=data)
+        self.assertEqual(updated_serializer.is_valid(), True)
+        updated_serializer.save()
+        self.assertEqual(
+            schedule.subject,
+            updated_serializer.data['subject']
+        )
+        self.assertEqual(schedule.subject, "new subject")
+
     def test_update_schedule_content(self):
-        self.fail()
+        serialize_input_data(recipients=self.recipients)
+        self.assertEqual(Schedule.objects.count(), 1)
+
+        data = create_schedule_input_data(content="new content")
+        schedule = Schedule.objects.first()
+        updated_serializer = ScheduleSerializer(instance=schedule, data=data)
+        self.assertEqual(updated_serializer.is_valid(), True)
+        updated_serializer.save()
+        self.assertEqual(schedule.content, updated_serializer.data['content'])
+        self.assertEqual(schedule.content, "new content")
+
+    def test_update_frequency_gt_end_date_raises_validation_error(self):
+        serialize_input_data(recipients=self.recipients)
+        self.assertEqual(Schedule.objects.count(), 1)
+
+        data = create_schedule_input_data(
+            frequency=timedelta(days=5),
+            end_date=date.today() + timedelta(days=1)
+        )
+        schedule = Schedule.objects.first()
+        updated_serializer = ScheduleSerializer(instance=schedule, data=data)
+        updated_serializer.is_valid()
+        self.assertEqual(
+            updated_serializer.errors['non_field_errors'][0],
+            FREQUENCY_GREATER_THAN_END_DATE_ERROR
+        )
+        with self.assertRaises(ValidationError):
+            updated_serializer.is_valid(raise_exception=True)
 
     def test_update_schedule_frequency(self):
-        self.fail()
+        serialize_input_data(
+            start_date=date.today(),
+            end_date=date.today() + timedelta(days=5),
+            recipients=self.recipients
+        )
+        self.assertEqual(Schedule.objects.count(), 1)
+
+        data = create_schedule_input_data(
+            frequency=timedelta(days=2),
+            end_date=date.today() + timedelta(days=5)
+        )
+        schedule = Schedule.objects.first()
+        updated_serializer = ScheduleSerializer(instance=schedule, data=data)
+        self.assertEqual(updated_serializer.is_valid(), True)
+        updated_serializer.save()
+        self.assertEqual(
+            updated_serializer.validated_data['frequency'], timedelta(days=2)
+        )
+        self.assertEqual(
+            updated_serializer.validated_data['frequency'], schedule.frequency
+        )
 
     def test_update_schedule_end_date_before_start_raises_error(self):
         serialize_input_data(recipients=self.recipients)

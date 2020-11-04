@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from re import search
 
 from rest_framework.serializers import ValidationError
@@ -8,13 +8,29 @@ from django.core import exceptions
 END_DATE_LESS_THAN_START_DATE_ERROR = "end_date cannot be less than start_date"
 START_DATE_NOT_ADDED_ERROR = "start_date cannot be empty"
 END_DATE_NOT_ADDED_ERROR = "end_date cannot be empty"
+FREQUENCY_NOT_ADDED_ERROR = "frequency cannot be empty"
 START_DATE_CANNOT_BE_BEFORE_TODAY_ERROR = "start_date cannot be in the past"
+FREQUENCY_GREATER_THAN_END_DATE_ERROR = "frequency cannot exceed end_date"
 FIELDS_NOT_UNIQUE_TOGETHER_ERROR = "Schedule fields should be unique together"
 
 # Errors for Recipient fields
 RECIPIENTS_GREATER_THAN_500_ERROR = "Recipients should be less than 500"
 RECIPIENTS_CONTAIN_DUPLICATES_ERROR = "Recipients shouldn't contain duplicates"
 INVALID_EMAIL_ADDRESS_ERROR = "Enter a valid email address."
+
+
+def frequency_not_greater_than_end_date(frequency, start_date, end_date):
+    """
+    check for start_date + frequency <= end_date.
+    else it is invalid since this case would be useless
+    """
+    if frequency is not None:
+        if start_date + frequency > end_date:
+            raise exceptions.ValidationError(
+                FREQUENCY_GREATER_THAN_END_DATE_ERROR
+            )
+    else:
+        raise exceptions.ValidationError(FREQUENCY_NOT_ADDED_ERROR)
 
 
 def start_date_after_today(start_date):

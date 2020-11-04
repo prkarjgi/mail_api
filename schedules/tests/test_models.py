@@ -20,11 +20,13 @@ class ScheduleModelTest(TestCase):
         r1.save()
         r2.save()
 
-        s1 = Schedule(content="test", frequency=timedelta())
+        s1 = Schedule(subject="test", content="test", frequency=timedelta())
         s1.save()
         s1.recipients.add(r1, r2)
 
-        s2 = Schedule(content="test", frequency=timedelta(1))
+        s2 = Schedule(
+            subject="test", content="test", frequency=timedelta(hours=1)
+        )
         s2.save()
         s2.recipients.add(r1, r2)
 
@@ -92,6 +94,16 @@ class ScheduleModelTest(TestCase):
         s2.delete()
         self.assertEqual(r2.schedule_set.count(), 0)
         self.assertEqual(Recipient.objects.count(), 3)
+
+    def test_frequency_greater_than_end_date_raises_validation_error(self):
+        s1 = Schedule(
+            content="placeholder",
+            frequency=timedelta(days=5),
+            end_date=date.today(),
+            start_date=date.today() + timedelta(days=1)
+        )
+        with self.assertRaises(ValidationError):
+            s1.full_clean()
 
 
 class RecipientModelTest(TestCase):

@@ -5,7 +5,7 @@ from django.core.validators import EmailValidator
 from django.utils import timezone
 from django.db import models
 
-from utils import validators
+from utils import validators, models as utils_models
 
 
 class Recipient(models.Model):
@@ -25,11 +25,12 @@ class Recipient(models.Model):
 
 class Schedule(models.Model):
     description = models.TextField(default='', blank=True)
+    subject = models.TextField(default='', blank=True)
     recipients = models.ManyToManyField(Recipient)
     content = models.TextField(default='', blank=True)
-    frequency = models.DurationField(default=timedelta())
+    frequency = models.DurationField(default=timedelta(0))
     start_date = models.DateField(default=date.today)
-    end_date = models.DateField(default=date.today)
+    end_date = models.DateField(default=utils_models.default_end_date)
     # status = models.CharField(
 
     # )
@@ -40,6 +41,9 @@ class Schedule(models.Model):
         super().clean(*args, **kwargs)
         validators.start_date_after_today(self.start_date)
         validators.start_date_before_end_date(self.start_date, self.end_date)
+        validators.frequency_not_greater_than_end_date(
+            self.frequency, self.start_date, self.end_date
+        )
         self.is_cleaned = True
 
     def save(self, *args, **kwargs):
@@ -49,6 +53,7 @@ class Schedule(models.Model):
 
     class Meta:
         unique_together = (
-            'description', 'content', 'frequency', 'start_date', 'end_date'
+            'description', 'subject', 'content', 'frequency',
+            'start_date', 'end_date'
         )
         ordering = ('id',)

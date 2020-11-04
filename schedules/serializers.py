@@ -19,6 +19,7 @@ class RecipientSerializer(serializers.Serializer):
 
 class ScheduleSerializer(serializers.Serializer):
     description = serializers.CharField()
+    subject = serializers.CharField(required=True)
     recipients = RecipientSerializer(many=True)
     content = serializers.CharField(required=True, max_length=1000)
     frequency = serializers.DurationField(required=True)
@@ -30,8 +31,8 @@ class ScheduleSerializer(serializers.Serializer):
             UniqueTogetherValidator(
                 queryset=Schedule.objects.all(),
                 fields=[
-                    'description', 'content', 'frequency',
-                    'start_date', 'end_date'
+                    'description', 'subject', 'content',
+                    'frequency', 'start_date', 'end_date'
                 ],
                 message=validators.FIELDS_NOT_UNIQUE_TOGETHER_ERROR
             )
@@ -45,6 +46,9 @@ class ScheduleSerializer(serializers.Serializer):
         validators.start_date_before_end_date(
             data['start_date'], data['end_date']
         )
+        validators.frequency_not_greater_than_end_date(
+            data['frequency'], data['start_date'], data['end_date']
+        )
         validators.recipients_less_than_500(data['recipients'])
         validators.recipients_not_contains_duplicates(data['recipients'])
 
@@ -53,6 +57,7 @@ class ScheduleSerializer(serializers.Serializer):
     def create(self, validated_data):
         schedule = Schedule.objects.create(
             description=validated_data['description'],
+            subject=validated_data['subject'],
             content=validated_data['content'],
             frequency=validated_data['frequency'],
             start_date=validated_data['start_date'],
@@ -66,11 +71,14 @@ class ScheduleSerializer(serializers.Serializer):
         instance.description = validated_data.get(
             'description', instance.description
         )
+        instance.subject = validated_data.get(
+            'subject', instance.subject
+        )
         instance.content = validated_data.get(
             'content', instance.content
         )
         instance.frequency = validated_data.get(
-            'validated_data', instance.frequency
+            'frequency', instance.frequency
         )
         instance.start_date = validated_data.get(
             'start_date', instance.start_date

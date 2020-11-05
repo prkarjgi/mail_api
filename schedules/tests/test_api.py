@@ -11,6 +11,7 @@ from utils.validators import RECIPIENTS_CONTAIN_DUPLICATES_ERROR,\
     RECIPIENTS_GREATER_THAN_500_ERROR, FIELDS_NOT_UNIQUE_TOGETHER_ERROR,\
     INVALID_EMAIL_ADDRESS_ERROR, END_DATE_NOT_ADDED_ERROR,\
     FREQUENCY_GREATER_THAN_END_DATE_ERROR
+from utils.models import default_date_time
 
 
 class ScheduleSerializerTest(TestCase):
@@ -134,7 +135,6 @@ class ScheduleSerializerTest(TestCase):
         serializer_1 = ScheduleSerializer(data=data_1)
         serializer_1.is_valid()
         serializer_1.save()
-
         data_2 = create_schedule_input_data(recipients=recipients)
         serializer_2 = ScheduleSerializer(data=data_2)
         serializer_2.is_valid()
@@ -148,7 +148,6 @@ class ScheduleSerializerTest(TestCase):
     def test_update_schedule_recipients(self):
         serialize_input_data(recipients=self.recipients)
         self.assertEqual(Schedule.objects.count(), 1)
-
         recipients = [
             {'name': 'test', 'email_address': 'test1@gmail.com'}
         ]
@@ -200,7 +199,7 @@ class ScheduleSerializerTest(TestCase):
 
         data = create_schedule_input_data(
             frequency=timedelta(days=5),
-            end_date=date.today() + timedelta(days=1)
+            end_date=default_date_time(days=1)
         )
         schedule = Schedule.objects.first()
         updated_serializer = ScheduleSerializer(instance=schedule, data=data)
@@ -214,15 +213,15 @@ class ScheduleSerializerTest(TestCase):
 
     def test_update_schedule_frequency(self):
         serialize_input_data(
-            start_date=date.today(),
-            end_date=date.today() + timedelta(days=5),
+            start_date=default_date_time(),
+            end_date=default_date_time(days=5),
             recipients=self.recipients
         )
         self.assertEqual(Schedule.objects.count(), 1)
 
         data = create_schedule_input_data(
             frequency=timedelta(days=2),
-            end_date=date.today() + timedelta(days=5)
+            end_date=default_date_time(days=5)
         )
         schedule = Schedule.objects.first()
         updated_serializer = ScheduleSerializer(instance=schedule, data=data)

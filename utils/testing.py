@@ -1,13 +1,14 @@
-from datetime import date, timedelta
+from datetime import datetime, date, timedelta
 
 from schedules.serializers import ScheduleSerializer
+from utils.models import default_date_time
 
 
 def create_schedule_input_data(
     description="placeholder", subject="placeholder",
     content="placeholder", frequency=timedelta(days=1),
-    start_date=date.today(),
-    end_date=date.today() + timedelta(days=1), recipients=[]
+    start_date=default_date_time(),
+    end_date=default_date_time(days=1), recipients=[]
 ):
     data = {}
     data['description'] = description
@@ -24,8 +25,8 @@ def serialize_input_data(
     description="placeholder", subject="placeholder",
     content="placeholder",
     frequency=timedelta(days=1),
-    start_date=date.today(),
-    end_date=date.today() + timedelta(days=1), recipients=[],
+    start_date=default_date_time(),
+    end_date=default_date_time(days=1), recipients=[],
     num_schedules=1,
     serializer_class=ScheduleSerializer
 ):

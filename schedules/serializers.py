@@ -23,8 +23,8 @@ class ScheduleSerializer(serializers.Serializer):
     recipients = RecipientSerializer(many=True)
     content = serializers.CharField(required=True, max_length=1000)
     frequency = serializers.DurationField(required=True)
-    start_date = serializers.DateField(required=True)
-    end_date = serializers.DateField(required=True)
+    start_date = serializers.DateTimeField(required=True)
+    end_date = serializers.DateTimeField(required=True)
 
     class Meta:
         validators = [
@@ -89,5 +89,6 @@ class ScheduleSerializer(serializers.Serializer):
         recipients = validated_data.get('recipients')
         if recipients:
             create_or_update_recipients(instance, recipients, True)
+        instance.status = instance.status
         instance.save()
         return instance

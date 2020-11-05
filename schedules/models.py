@@ -29,8 +29,8 @@ class Schedule(models.Model):
     recipients = models.ManyToManyField(Recipient)
     content = models.TextField(default='', blank=True)
     frequency = models.DurationField(default=timedelta(0))
-    start_date = models.DateField(default=date.today)
-    end_date = models.DateField(default=utils_models.default_end_date)
+    start_date = models.DateTimeField(default=utils_models.default_start_date)
+    end_date = models.DateTimeField(default=utils_models.default_end_date)
     status = models.CharField(
         max_length=2,
         choices=utils_models.SCHEDULE_STATUS_CHOICES,

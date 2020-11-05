@@ -21,7 +21,6 @@ class ScheduleViewTest(TestCase):
             {'name': 'test', 'email_address': 'test@gmail.com'},
             {'name': 'test2', 'email_address': 'test2@test.com'}
         ]
-        return super().setUp()
 
     def test_get_schedule_list(self):
         recipients = self.recipients
@@ -56,40 +55,48 @@ class ScheduleViewTest(TestCase):
 
     def test_get_schedule(self):
         serialize_input_data(recipients=self.recipients, num_schedules=5)
-
-        response_1 = self.client.get(path=f'{self.schedule_base_url}1/')
+        pk = [s.pk for s in Schedule.objects.all()]
+        response_1 = self.client.get(path=f'{self.schedule_base_url}{pk[0]}/')
         self.assertEqual(response_1.status_code, 200)
 
-        response_2 = self.client.get(path=f'{self.schedule_base_url}2/')
+        response_2 = self.client.get(path=f'{self.schedule_base_url}{pk[1]}/')
         self.assertEqual(response_2.status_code, 200)
 
     def test_update_one_schedule(self):
-        recipients = self.recipients
-        data = create_schedule_input_data(recipients=recipients)
-
+        data = create_schedule_input_data(recipients=self.recipients)
         response = self.client.post(
             path=self.schedule_base_url,
             data=data,
             content_type="application/json"
         )
-        print(response.content)
-
-        data = create_schedule_input_data(content="new content")
+        self.assertEqual(response.status_code, 201)
+        pk = [s.pk for s in Schedule.objects.all()]
+        new_content = "new content"
+        data = create_schedule_input_data(content=new_content)
         update_response = self.client.put(
-            path=f'{self.schedule_base_url}1/',
+            path=f'{self.schedule_base_url}{pk[0]}/',
             data=data,
             content_type="application/json"
         )
-        print(update_response.content)
+        stream = BytesIO(update_response.content)
+        json = JSONParser().parse(stream)
+
+        self.assertEqual(update_response.status_code, 200)
+        self.assertEqual(json['content'], new_content)
+
+        schedule = Schedule.objects.get(id=pk[0])
+        self.assertEqual(schedule.content, new_content)
 
     def test_update_schedule_with_invalid_data(self):
         self.fail("Write unit test to update a schedule with invalid data")
 
     def test_delete_schedule(self):
         serialize_input_data(recipients=self.recipients)
-        schedule = Schedule.objects.all()
-
-        response = self.client.delete(path=f'{self.schedule_base_url}1/')
+        # schedule = Schedule.objects.all()
+        pk = [s.pk for s in Schedule.objects.all()]
+        response = self.client.delete(
+            path=f'{self.schedule_base_url}{pk[0]}/'
+        )
         self.assertEqual(response.status_code, 204)
         self.assertEqual(Schedule.objects.count(), 0)
         self.assertEqual(

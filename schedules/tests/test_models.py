@@ -5,7 +5,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from schedules.models import Schedule, Recipient
-from schedules.tasks import send_email_to_schedule
+from utils.models import default_date_time
 
 
 class ScheduleModelTest(TestCase):
@@ -44,8 +44,8 @@ class ScheduleModelTest(TestCase):
         s1.save()
 
     def test_duplicate_schedule_is_invalid(self):
-        start_date = date.today()
-        end_date = start_date + timedelta(days=1)
+        start_date = default_date_time()
+        end_date = default_date_time(days=1)
         s1 = Schedule.objects.create(start_date=start_date, end_date=end_date)
 
         with self.assertRaises(ValidationError):
@@ -54,7 +54,7 @@ class ScheduleModelTest(TestCase):
 
     def test_stop_date_cannot_be_before_start_date(self):
         s1 = Schedule()
-        s1.start_date = date.today()
+        s1.start_date = default_date_time()
         s1.end_date = s1.start_date - timedelta(days=5)
         # should raise error
         with self.assertRaises(ValidationError):
@@ -62,14 +62,14 @@ class ScheduleModelTest(TestCase):
 
     def test_start_date_cannot_be_before_now(self):
         s1 = Schedule()
-        s1.start_date = date.today() - timedelta(days=5)
+        s1.start_date = default_date_time(days=5, subtract=True)
         # should raise error
         with self.assertRaises(ValidationError):
             s1.full_clean()
 
     def test_save_method_performs_validation(self):
         s1 = Schedule()
-        s1.start_date = date.today() - timedelta(days=2)
+        s1.start_date = default_date_time(days=2, subtract=True)
         with self.assertRaises(ValidationError):
             s1.save()
 
@@ -98,8 +98,8 @@ class ScheduleModelTest(TestCase):
         s1 = Schedule(
             content="placeholder",
             frequency=timedelta(days=5),
-            end_date=date.today(),
-            start_date=date.today() + timedelta(days=1)
+            end_date=default_date_time(),
+            start_date=default_date_time(days=1)
         )
         with self.assertRaises(ValidationError):
             s1.full_clean()

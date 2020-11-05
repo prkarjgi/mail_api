@@ -3,6 +3,9 @@ from re import search
 
 from rest_framework.serializers import ValidationError
 from django.core import exceptions
+from django.utils import timezone
+
+from utils.models import default_date_time
 
 # Errors for Schedule Model fields
 END_DATE_LESS_THAN_START_DATE_ERROR = "end_date cannot be less than start_date"
@@ -39,7 +42,7 @@ def start_date_after_today(start_date):
     check for valid start_date values
     """
     if start_date:
-        if start_date < date.today():
+        if start_date < default_date_time():
             raise exceptions.ValidationError(
                 START_DATE_CANNOT_BE_BEFORE_TODAY_ERROR
             )

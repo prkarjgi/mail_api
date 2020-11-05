@@ -2,13 +2,15 @@ from datetime import date, timedelta
 
 
 ACTIVE = "AC"
-NOT_SCHEDULED = "NS"
+NOT_ADDED = "NA"
 COMPLETED = "CO"
+PAUSED = "PA"
 
-schedule_status_choices = [
+SCHEDULE_STATUS_CHOICES = [
     (ACTIVE, "Active"),
-    (NOT_SCHEDULED, "Not Scheduled"),
-    (COMPLETED, "Completed")
+    (NOT_ADDED, "Not Added to Celery Beat"),
+    (COMPLETED, "Completed"),
+    (PAUSED, "Paused")
 ]
 
 

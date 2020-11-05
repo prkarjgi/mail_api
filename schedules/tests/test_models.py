@@ -5,6 +5,7 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from schedules.models import Schedule, Recipient
+from schedules.tasks import send_email_to_schedule
 
 
 class ScheduleModelTest(TestCase):
@@ -23,13 +24,11 @@ class ScheduleModelTest(TestCase):
         s1 = Schedule(subject="test", content="test", frequency=timedelta())
         s1.save()
         s1.recipients.add(r1, r2)
-
         s2 = Schedule(
             subject="test", content="test", frequency=timedelta(hours=1)
         )
         s2.save()
         s2.recipients.add(r1, r2)
-
         self.assertEqual([r1, r2], list(s1.recipients.all()))
         self.assertEqual([r1, r2], list(s2.recipients.all()))
         self.assertNotEqual([r1, r3], list(s1.recipients.all()))

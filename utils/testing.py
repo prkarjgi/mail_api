@@ -27,8 +27,7 @@ def serialize_input_data(
     frequency=timedelta(days=1),
     start_date=default_date_time(),
     end_date=default_date_time(days=1), recipients=[],
-    num_schedules=1,
-    serializer_class=ScheduleSerializer
+    num_schedules=1
 ):
     for num in range(num_schedules):
         data = create_schedule_input_data(
@@ -40,6 +39,6 @@ def serialize_input_data(
             end_date=end_date,
             recipients=recipients
         )
-        serializer = serializer_class(data=data)
+        serializer = ScheduleSerializer(data=data)
         if serializer.is_valid():
             serializer.save()

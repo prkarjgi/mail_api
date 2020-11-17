@@ -4,7 +4,7 @@ from django.test import TestCase
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
-from schedules.models import Schedule, Recipient
+from schedules.models import Schedule, Recipient, Interval
 from utils.models import default_date_time
 
 
@@ -125,3 +125,16 @@ class RecipientModelTest(TestCase):
         r1 = Recipient(email_address="test")
         with self.assertRaises(ValidationError):
             r1.full_clean()
+
+
+class IntervalModelTest(TestCase):
+    def test_create_interval_instance(self):
+        i1 = Interval.objects.create(interval=timedelta(days=1))
+        i2 = Interval.objects.create(interval=timedelta(hours=6))
+        self.assertEqual(Interval.objects.count(), 2)
+
+    def test_duplicate_interval_raises_validation_error(self):
+        i1 = Interval.objects.create(interval=timedelta(days=1))
+        with self.assertRaises(ValidationError):
+            i2 = Interval(interval=timedelta(days=1))
+            i2.full_clean()

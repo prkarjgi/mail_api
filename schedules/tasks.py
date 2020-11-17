@@ -1,16 +1,40 @@
+from datetime import timedelta
+
+from celery import shared_task
+from django.db.models import Q
+from django.utils import timezone
 from django.core.mail import send_mail
 
-from schedules.models import Schedule
+from schedules.models import Schedule, Interval
 from tdd_mail_app.settings import EMAIL_HOST_USER
-from utils.models import COMPLETED, ACTIVE, NOT_ADDED, PAUSED
+from utils.tasks import discover_schedules
 
 
-def task_remove_completed_schedules():
+def setup_periodic_tasks():
     pass
 
 
-def task_start_notadded_schedules():
-    pass
+def task_send_email(interval: Interval):
+    now = timezone.now()
+    interval = interval.interval
+    end_limit = now + interval
+    schedules = Schedule.objects.filter(
+        Q(frequency=interval.interval),
+        Q(status=Schedule.ACTIVE) | Q(status=Schedule.NOT_ADDED),
+    )
+
+    for schedule in schedules:
+        if end_limit >= schedule.end_date:
+            schedule.status = Schedule.COMPLETED
+            schedule.save()
+
+        if schedule.status == Schedule.NOT_ADDED:
+            if schedule.start_date <= now and schedule.end_date >= end_limit:
+                schedule.status = Schedule.ACTIVE
+                schedule.save()
+
+        if schedule.status == Schedule.ACTIVE:
+            send_email_to_schedule(schedule=schedule)
 
 
 def send_email_to_schedule(schedule: Schedule):
@@ -23,15 +47,3 @@ def send_email_to_schedule(schedule: Schedule):
         from_email=EMAIL_HOST_USER,
         recipient_list=recipient_list
     )
-
-
-def discover_completed_schedules():
-    return Schedule.objects.filter(status=COMPLETED)
-
-
-def discover_active_schedules():
-    return Schedule.objects.filter(status=ACTIVE)
-
-
-def discover_notadded_schedules():
-    return Schedule.objects.filter(status=NOT_ADDED)

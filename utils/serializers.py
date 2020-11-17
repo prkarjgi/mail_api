@@ -1,6 +1,6 @@
 from typing import List, Dict
 
-from schedules.models import Schedule, Recipient
+from schedules.models import Schedule, Recipient, Interval
 
 
 def get_or_create_recipient(recipient: Dict):
@@ -30,3 +30,12 @@ def create_or_update_recipients(
 
     Recipient.objects.bulk_create(to_be_created)
     schedule.recipients.add(*new_recipients)
+
+
+def create_interval(schedule: Schedule):
+    frequency = schedule.frequency
+    if not Interval.objects.filter(interval=frequency).exists():
+        interval = Interval.objects.create(interval=frequency)
+    else:
+        interval = Interval.objects.get(interval=frequency)
+    return interval

@@ -2,19 +2,6 @@ from datetime import date, timedelta, datetime
 from django.utils import timezone
 
 
-ACTIVE = "AC"
-NOT_ADDED = "NA"
-COMPLETED = "CO"
-PAUSED = "PA"
-
-SCHEDULE_STATUS_CHOICES = [
-    (ACTIVE, "Active"),
-    (NOT_ADDED, "Not Added to Celery Beat"),
-    (COMPLETED, "Completed"),
-    (PAUSED, "Paused")
-]
-
-
 def default_date_time(
     days=0, seconds=0, microseconds=0,
     milliseconds=0, minutes=0, hours=0, weeks=0,

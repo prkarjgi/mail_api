@@ -4,7 +4,8 @@ from django.core.validators import EmailValidator
 
 from schedules.models import Schedule, Recipient
 from utils import validators
-from utils.serializers import create_or_update_recipients
+from utils.serializers import create_or_update_recipients,\
+    create_or_get_interval
 
 
 class RecipientSerializer(serializers.Serializer):
@@ -25,6 +26,10 @@ class ScheduleSerializer(serializers.Serializer):
     frequency = serializers.DurationField(required=True)
     start_date = serializers.DateTimeField(required=True)
     end_date = serializers.DateTimeField(required=True)
+    status = serializers.ChoiceField(
+        choices=Schedule.SCHEDULE_STATUS_CHOICES,
+        allow_blank=True
+    )
 
     class Meta:
         validators = [
@@ -65,6 +70,7 @@ class ScheduleSerializer(serializers.Serializer):
         )
         recipients = validated_data['recipients']
         create_or_update_recipients(schedule, recipients, False)
+        interval = create_or_get_interval(schedule)
         return schedule
 
     def update(self, instance, validated_data):
@@ -86,9 +92,15 @@ class ScheduleSerializer(serializers.Serializer):
         instance.end_date = validated_data.get(
             'end_date', instance.end_date
         )
+        instance.status = validated_data.get(
+            'status', instance.status
+        )
+
         recipients = validated_data.get('recipients')
         if recipients:
             create_or_update_recipients(instance, recipients, True)
-        instance.status = instance.status
+
         instance.save()
+
+        interval = create_or_get_interval(schedule=instance)
         return instance

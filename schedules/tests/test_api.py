@@ -5,7 +5,7 @@ from django.test import TestCase
 from rest_framework.serializers import ValidationError
 
 from schedules.serializers import ScheduleSerializer, RecipientSerializer
-from schedules.models import Schedule, Recipient
+from schedules.models import Schedule, Recipient, Interval
 from utils.testing import create_schedule_input_data, serialize_input_data
 from utils.validators import RECIPIENTS_CONTAIN_DUPLICATES_ERROR,\
     RECIPIENTS_GREATER_THAN_500_ERROR, FIELDS_NOT_UNIQUE_TOGETHER_ERROR,\
@@ -233,6 +233,7 @@ class ScheduleSerializerTest(TestCase):
         self.assertEqual(
             updated_serializer.validated_data['frequency'], schedule.frequency
         )
+        self.assertEqual(Schedule.objects.count(), 1)
 
     def test_update_schedule_end_date_before_start_raises_error(self):
         serialize_input_data(recipients=self.recipients)
@@ -242,6 +243,48 @@ class ScheduleSerializerTest(TestCase):
         serializer = ScheduleSerializer(instance=schedule, data=new_data)
         with self.assertRaises(ValidationError):
             serializer.is_valid(raise_exception=True)
+
+    def test_create_interval_when_creating_schedule(self):
+        serialize_input_data(recipients=self.recipients)
+        schedule = Schedule.objects.first()
+        interval = Interval.objects.first()
+        self.assertEqual(schedule.frequency, interval.interval)
+        self.assertEqual(Interval.objects.count(), 1)
+
+    def test_update_interval_when_updating_schedule(self):
+        serialize_input_data(recipients=self.recipients)
+        schedule = Schedule.objects.first()
+        interval = Interval.objects.first()
+        self.assertEqual(schedule.frequency, interval.interval)
+
+        new_data = create_schedule_input_data()
+        new_data['frequency'] = timedelta(days=3)
+        new_data['end_date'] = new_data['start_date'] + timedelta(days=5)
+        serializer = ScheduleSerializer(instance=schedule, data=new_data)
+
+        self.assertEqual(serializer.is_valid(), True)
+        if serializer.is_valid():
+            serializer.save()
+        interval = Interval.objects.get(interval=new_data['frequency'])
+        self.assertEqual(Schedule.objects.count(), 1)
+        self.assertEqual(Interval.objects.count(), 2)
+        self.assertEqual(schedule.frequency, new_data['frequency'])
+        self.assertEqual(schedule.frequency, interval.interval)
+
+    def test_update_schedule_status_to_paused(self):
+        serialize_input_data(recipients=self.recipients)
+        schedule = Schedule.objects.first()
+        self.assertEqual(schedule.status, Schedule.NOT_ADDED)
+
+        new_data = create_schedule_input_data()
+        new_data['status'] = Schedule.PAUSED
+        serializer = ScheduleSerializer(instance=schedule, data=new_data)
+        self.assertEqual(serializer.is_valid(), True)
+        if serializer.is_valid():
+            serializer.save()
+
+        self.assertEqual(schedule.status, Schedule.PAUSED)
+        self.assertEqual(Schedule.objects.count(), 1)
 
 
 class RecipientSerializerTest(TestCase):

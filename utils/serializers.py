@@ -3,7 +3,7 @@ from typing import List, Dict
 from schedules.models import Schedule, Recipient, Interval
 
 
-def get_or_create_recipient(recipient: Dict):
+def create_or_get_recipient(recipient: Dict):
     email_address = recipient.get('email_address')
     new_created = False
     if Recipient.objects.filter(email_address=email_address).exists():
@@ -23,7 +23,7 @@ def create_or_update_recipients(
         schedule.recipients.clear()
 
     for recipient in recipients:
-        new_recipient, new_created = get_or_create_recipient(recipient)
+        new_recipient, new_created = create_or_get_recipient(recipient)
         if new_created:
             to_be_created.append(new_recipient)
         new_recipients.append(new_recipient)
@@ -32,7 +32,7 @@ def create_or_update_recipients(
     schedule.recipients.add(*new_recipients)
 
 
-def create_interval(schedule: Schedule):
+def create_or_get_interval(schedule: Schedule):
     frequency = schedule.frequency
     if not Interval.objects.filter(interval=frequency).exists():
         interval = Interval.objects.create(interval=frequency)

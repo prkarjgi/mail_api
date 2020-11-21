@@ -10,10 +10,7 @@ from tdd_mail_app.settings import EMAIL_HOST_USER
 from utils.tasks import discover_schedules
 
 
-def setup_periodic_tasks():
-    pass
-
-
+@shared_task
 def task_send_email(interval: Interval):
     now = timezone.now()
     interval = interval.interval
@@ -37,6 +34,7 @@ def task_send_email(interval: Interval):
             send_email_to_schedule(schedule=schedule)
 
 
+@shared_task
 def send_email_to_schedule(schedule: Schedule):
     recipient_list = [
         recipient.email_address for recipient in schedule.recipients.all()

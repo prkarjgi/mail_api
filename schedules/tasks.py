@@ -6,7 +6,7 @@ from django.utils import timezone
 from django.core.mail import send_mail
 
 from schedules.models import Schedule, Interval
-from tdd_mail_app.settings import EMAIL_HOST_USER
+from mail_api.settings import EMAIL_HOST_USER
 from utils.tasks import discover_schedules
 
 

@@ -15,7 +15,9 @@ psycopg2==2.8.6
 pycodestyle==2.6.0
 pyflakes==2.2.0
 pytz==2020.1
+selenium==3.141.0
 six==1.15.0
 sqlparse==0.4.1
+urllib3==1.26.2
 vine==5.0.0
 wcwidth==0.2.5

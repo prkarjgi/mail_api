@@ -13,3 +13,7 @@ db.sqlite3
 .env
 
 *.rdb
+
+docs/
+
+README.rst

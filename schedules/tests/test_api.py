@@ -4,6 +4,7 @@ from unittest import skip
 from django.test import TestCase
 from rest_framework.serializers import ValidationError
 
+from mail_api.celery import app
 from schedules.serializers import ScheduleSerializer, RecipientSerializer
 from schedules.models import Schedule, Recipient, Interval
 from utils.testing import create_schedule_input_data, serialize_input_data
@@ -285,6 +286,31 @@ class ScheduleSerializerTest(TestCase):
 
         self.assertEqual(schedule.status, Schedule.PAUSED)
         self.assertEqual(Schedule.objects.count(), 1)
+
+    def test_creating_interval_adds_celery_task(self):
+        serialize_input_data(recipients=self.recipients)
+        schedule = Schedule.objects.first()
+        self.assertIsNotNone(app.conf.beat_schedule[str(schedule.frequency)])
+
+    def test_updating_interval_adds_new_celery_task(self):
+        serialize_input_data(recipients=self.recipients)
+        schedule = Schedule.objects.first()
+        interval = Interval.objects.first()
+        self.assertEqual(interval.interval, schedule.frequency)
+        self.assertIsNotNone(app.conf.beat_schedule[str(interval.interval)])
+        self.assertEqual(Interval.objects.count(), 1)
+
+        new_data = create_schedule_input_data()
+        new_data['frequency'] = timedelta(days=3)
+        new_data['end_date'] = new_data['start_date'] + timedelta(days=5)
+        serializer = ScheduleSerializer(instance=schedule, data=new_data)
+        if serializer.is_valid():
+            serializer.save()
+
+        interval = Interval.objects.get(interval=new_data['frequency'])
+        self.assertIsNotNone(app.conf.beat_schedule[str(interval.interval)])
+        # self.assertEqual(len(app.conf.beat_schedule), 2)
+        self.assertEqual(Interval.objects.count(), 2)
 
 
 class RecipientSerializerTest(TestCase):

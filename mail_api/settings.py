@@ -132,7 +132,7 @@ STATIC_URL = '/static/'
 
 
 # Celery configuration settings
-CELERY_BROKER_URL = ""
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL")
 CELERY_CELERYBEAT_SCHEDULE = {}
 
 

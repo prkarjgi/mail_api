@@ -1,6 +1,9 @@
 from typing import List, Dict
+from datetime import timedelta
 
 from schedules.models import Schedule, Recipient, Interval
+from schedules import tasks
+from mail_api.celery import app
 
 
 def create_or_get_recipient(recipient: Dict):
@@ -36,6 +39,19 @@ def create_or_get_interval(schedule: Schedule):
     frequency = schedule.frequency
     if not Interval.objects.filter(interval=frequency).exists():
         interval = Interval.objects.create(interval=frequency)
+        app.conf.beat_schedule[str(interval.interval)] = {
+            'task': 'schedules.tasks.task_send_email',
+            'schedule': interval.interval,
+            'args': (interval.interval,),
+        }
     else:
         interval = Interval.objects.get(interval=frequency)
     return interval
+
+
+def encode_interval(interval: timedelta):
+    pass
+
+
+def decode_interval(interval: str):
+    pass
